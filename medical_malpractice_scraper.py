@@ -23,6 +23,7 @@ import argparse
 import csv
 import json
 import logging
+import os
 import sys
 import time
 from dataclasses import dataclass, field, asdict
@@ -541,8 +542,21 @@ Examples:
 
     args = parser.parse_args()
 
+    # Token priority: --token flag > .env file > COURTLISTENER_API_TOKEN env var
+    token = args.token
+    if not token:
+        token = os.environ.get("COURTLISTENER_API_TOKEN")
+    if not token:
+        env_path = Path(__file__).parent / ".env"
+        if env_path.exists():
+            for line in env_path.read_text().splitlines():
+                line = line.strip()
+                if line.startswith("COURTLISTENER_API_TOKEN="):
+                    token = line.split("=", 1)[1].strip()
+                    break
+
     run_agent(
-        api_token=args.token,
+        api_token=token,
         days_back=args.days,
         max_results=args.max,
         output=args.output,
